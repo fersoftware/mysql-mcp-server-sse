@@ -13,15 +13,15 @@ from src.db.mysql_operations import get_db_connection, execute_query
 logger = logging.getLogger("mysql_server")
 
 # Classe de exceção personalizada
-class ErroDeValidacaoDeParametro(Exception):
-    """Erro de validação de parâmetro"""
+class ParameterValidationError(Exception):
+    """Parameter validation error"""
     pass
 
-class ErroDeExecucaoDeConsulta(Exception):
-    """Erro de execução de consulta"""
+class QueryExecutionError(Exception):
+    """Query execution error"""
     pass
 
-class FerramentaDeMetadadosBase:
+class MetadataToolBase:
     """
     Classe base para ferramentas de consulta de metadados do MySQL
     Fornece funcionalidades comuns de tratamento de erros e formatação de resultados
@@ -96,8 +96,39 @@ class FerramentaDeMetadadosBase:
                 ], "erro desconhecido")
         return wrapper
 
-    @staticmethod
-    async def executar_consulta_de_metadados(consulta: str, params: Optional[Dict[str, Any]] = None, tipo_de_operacao: str = "consulta de metadados") -> str:
+    @classmethod
+    def handle_query_error(cls, func):
+        """
+        Decorador: Trata erros de consulta
+        
+        Args:
+            func: Função decorada
+            
+        Returns:
+            Função decorada
+        """
+        async def wrapper(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except ParameterValidationError as e:
+                logger.error(f"Erro de validação de parâmetro: {str(e)}")
+                return cls.formatar_resultados([
+                    {"error": f"Parameter validation error: {str(e)}"}
+                ], "parameter validation")
+            except QueryExecutionError as e:
+                logger.error(f"Erro na execução da consulta: {str(e)}")
+                return cls.formatar_resultados([
+                    {"error": f"Query execution error: {str(e)}"}
+                ], "query execution")
+            except Exception as e:
+                logger.error(f"Erro desconhecido: {str(e)}")
+                return cls.formatar_resultados([
+                    {"error": f"Unknown error: {str(e)}"}
+                ], "unknown error")
+        return wrapper
+
+    @classmethod
+    async def executar_consulta_de_metadados(cls, consulta: str, params: Optional[Dict[str, Any]] = None, tipo_de_operacao: str = "consulta de metadados") -> str:
         """
         Executa uma consulta de metadados e retorna os resultados formatados
         
@@ -112,7 +143,7 @@ class FerramentaDeMetadadosBase:
         try:
             with get_db_connection() as connection:
                 resultados = await execute_query(connection, consulta, params)
-                return FerramentaDeMetadadosBase.formatar_resultados(resultados, tipo_de_operacao)
+                return cls.formatar_resultados(resultados, tipo_de_operacao)
         except Exception as e:
             logger.error(f"Erro na execução da consulta de metadados: {str(e)}")
-            raise ErroDeExecucaoDeConsulta(str(e))
+            raise QueryExecutionError(str(e))

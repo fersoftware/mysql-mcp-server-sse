@@ -78,6 +78,8 @@ def start_server():
         # Inicia o servidor usando a função run_app
         logger.debug("Iniciando servidor com mcp.run('sse')...")
         mcp.run('sse')
+
+        
     except Exception as e:
         logger.exception(f"Erro durante a execução do servidor: {str(e)}")
         print(f"Erro durante a execução do servidor: {str(e)}")

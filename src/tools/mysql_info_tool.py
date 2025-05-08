@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
 
 from .metadata_base_tool import MetadataToolBase, ParameterValidationError, QueryExecutionError
-from src.security.sql_analyzer import EnvironmentType
+from src.security.sql_analyzer import TipoAmbiente
 from src.db.mysql_operations import get_db_connection, execute_query
 
 logger = logging.getLogger("mysql_server")
@@ -46,7 +46,7 @@ PREFIXOS_VARIAVEIS_SENSIVEIS = [
     "authentication", "secure", "credential", "token"
 ]
 
-def check_environment_permission(env_type: EnvironmentType, query_type: str) -> bool:
+def check_environment_permission(env_type: TipoAmbiente, query_type: str) -> bool:
     """
     Verifica se o ambiente atual permite a execução de um tipo específico de consulta
     
