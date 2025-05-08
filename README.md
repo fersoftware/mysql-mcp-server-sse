@@ -192,6 +192,22 @@ O servidor inclui um mecanismo completo de tratamento de erros:
 - Captura e registro de erros em tempo de execução
 - Reversão automática de transações
 
+## Cliente de Teste
+
+O projeto inclui um cliente de teste (`test_client.py`) que demonstra como se conectar ao servidor e executar consultas MySQL. As melhorias recentes incluem:
+
+- Melhor tratamento da sessão SSE:
+  - Verificação dupla do ping da sessão
+  - Espera adequada para inicialização completa do servidor
+  - Tratamento de erros mais robusto
+  - Melhor log de eventos SSE
+
+- Melhorias no envio de consultas:
+  - Espaçamento adequado entre consultas
+  - Verificação de status da sessão antes de enviar consultas
+  - Tratamento de respostas SSE mais robusto
+  - Timeout ajustado para receber todas as respostas
+
 ## Guia de Contribuição
 
 Sinta-se à vontade para enviar Issues e Pull Requests para melhorar o projeto.
