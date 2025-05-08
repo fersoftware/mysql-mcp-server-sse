@@ -1,6 +1,6 @@
 """
-MySQL元数据查询工具
-提供表结构等元数据信息查询功能
+Ferramenta de consulta de metadados do MySQL
+Fornece funcionalidades de consulta de estrutura de tabelas e outras informações de metadados
 """
 
 import json
@@ -14,85 +14,85 @@ from src.db.mysql_operations import get_db_connection, execute_query
 
 logger = logging.getLogger("mysql_server")
 
-# 工具函数: 用于参数验证
+# Função de validação de padrão
 def validate_pattern(pattern: str) -> bool:
     """
-    验证模式字符串是否安全 (防止SQL注入)
+    Valida se o padrão de string é seguro (prevenindo injeção SQL)
     
     Args:
-        pattern: 要验证的模式字符串
+        pattern: Padrão de string a ser validado
         
     Returns:
-        如果模式安全返回True，否则抛出ValueError
+        Retorna True se o padrão for seguro, caso contrário lança ValueError
     
     Raises:
-        ValueError: 当模式包含不安全字符时
+        ValueError: Quando o padrão contém caracteres não seguros
     """
-    # 仅允许字母、数字、下划线和通配符(% 和 _)
+    # Apenas permite letras, números, sublinhados e caracteres curinga (% e _)
     if not re.match(r'^[a-zA-Z0-9_%]+$', pattern):
-        raise ValueError("模式只能包含字母、数字、下划线和通配符(%_)")
+        raise ValueError("Padrão só pode conter letras, números, sublinhados e caracteres curinga (%_)")
     return True
 
 def validate_table_name(name: str) -> bool:
     """
-    验证表名是否合法安全
+    Valida se o nome da tabela é seguro e válido
     
     Args:
-        name: 要验证的表名
+        name: Nome da tabela a ser validado
         
     Returns:
-        如果表名安全返回True，否则抛出ValueError
+        Retorna True se o nome da tabela for seguro, caso contrário lança ValueError
     
     Raises:
-        ValueError: 当表名包含不安全字符时
+        ValueError: Quando o nome da tabela contém caracteres não seguros
     """
-    # 仅允许字母、数字和下划线
+    # Apenas permite letras, números e sublinhados
     if not re.match(r'^[a-zA-Z0-9_]+$', name):
-        raise ValueError(f"无效的表名: {name}, 表名只能包含字母、数字和下划线")
+        raise ValueError(f"Nome de tabela inválido: {name}, nome da tabela só pode conter letras, números e sublinhados")
     return True
 
 def validate_database_name(name: str) -> bool:
     """
-    验证数据库名是否合法安全
+    Valida se o nome do banco de dados é seguro e válido
     
     Args:
-        name: 要验证的数据库名
+        name: Nome do banco de dados a ser validado
         
     Returns:
-        如果数据库名安全返回True，否则抛出ValueError
+        Retorna True se o nome do banco for seguro, caso contrário lança ValueError
     
     Raises:
-        ValueError: 当数据库名包含不安全字符时
+        ValueError: Quando o nome do banco contém caracteres não seguros
     """
-    # 仅允许字母、数字和下划线
+    # Apenas permite letras, números e sublinhados
     if not re.match(r'^[a-zA-Z0-9_]+$', name):
-        raise ValueError(f"无效的数据库名: {name}, 数据库名只能包含字母、数字和下划线")
+        raise ValueError(f"Nome de banco de dados inválido: {name}, nome do banco só pode conter letras, números e sublinhados")
     return True
 
 def register_metadata_tools(mcp: FastMCP):
     """
-    注册MySQL元数据查询工具到MCP服务器
+    Registra ferramentas de consulta de metadados do MySQL no servidor MCP
     
     Args:
-        mcp: FastMCP服务器实例
+        mcp: Instância do servidor FastMCP
     """
-    logger.debug("注册MySQL元数据查询工具...")
+    logger.debug("Registrando ferramentas de consulta de metadados do MySQL...")
     
     @mcp.tool()
     @MetadataToolBase.handle_query_error
     async def mysql_show_tables(database: Optional[str] = None, pattern: Optional[str] = None,
                                limit: int = 100, exclude_views: bool = False) -> str:
         """
-        获取数据库中的表列表，支持筛选和限制结果数量
+        Obtém lista de tabelas do banco de dados, com suporte a filtro e limitação de resultados
         
         Args:
-            database: 数据库名称 (可选，默认使用当前连接的数据库)
-            pattern: 表名匹配模式 (可选, 例如 '%user%')
-            limit: 返回结果的最大数量 (默认100，设为0表示无限制)
-            exclude_views: 是否排除视图 (默认为False)
+            database: Nome do banco de dados (opcional, usa o banco atual por padrão)
+            pattern: Padrão de correspondência para nomes de tabelas (opcional, ex: '%user%')
+            limit: Número máximo de resultados a retornar (padrão 100, 0 indica sem limite)
+            exclude_views: Excluir views da lista (padrão False)
             
         Returns:
-            表列表的JSON字符串
+            Lista de tabelas em formato JSON
         """
         # 参数验证
         if database:
@@ -158,7 +158,7 @@ def register_metadata_tools(mcp: FastMCP):
             # 构造元数据
             metadata_info = {
                 "metadata_info": {
-                    "operation_type": "表列表查询",
+                    "operation_type": "Consulta de lista de tabelas",
                     "result_count": len(limited_results),
                     "total_count": len(results),
                     "filtered": {
@@ -177,96 +177,96 @@ def register_metadata_tools(mcp: FastMCP):
     @MetadataToolBase.handle_query_error
     async def mysql_show_columns(table: str, database: Optional[str] = None) -> str:
         """
-        获取表的列信息
+        Obtém informações das colunas de uma tabela
         
         Args:
-            table: 表名
-            database: 数据库名称 (可选，默认使用当前连接的数据库)
+            table: Nome da tabela
+            database: Nome do banco de dados (opcional, usa o banco atual por padrão)
             
         Returns:
-            表列信息的JSON字符串
+            Informações das colunas da tabela em formato JSON
         """
-        # 参数验证
+        # Validação de parâmetros
         MetadataToolBase.validate_parameter(
             "table", table,
             lambda x: re.match(r'^[a-zA-Z0-9_]+$', x),
-            "表名只能包含字母、数字和下划线"
+            "Nome da tabela só pode conter letras, números e sublinhados"
         )
         
         if database:
             MetadataToolBase.validate_parameter(
                 "database", database, 
                 lambda x: re.match(r'^[a-zA-Z0-9_]+$', x),
-                "数据库名称只能包含字母、数字和下划线"
+                "Nome do banco só pode conter letras, números e sublinhados"
             )
             
         query = f"SHOW COLUMNS FROM `{table}`" if not database else f"SHOW COLUMNS FROM `{database}`.`{table}`"
-        logger.debug(f"执行查询: {query}")
+        logger.debug(f"Executando consulta: {query}")
         
-        return await MetadataToolBase.execute_metadata_query(query, operation_type="表列信息查询")
+        return await MetadataToolBase.execute_metadata_query(query, operation_type="Consulta de informações das colunas")
 
     @mcp.tool()
     @MetadataToolBase.handle_query_error
     async def mysql_describe_table(table: str, database: Optional[str] = None) -> str:
         """
-        描述表结构
+        Descreve a estrutura de uma tabela
         
         Args:
-            table: 表名
-            database: 数据库名称 (可选，默认使用当前连接的数据库)
+            table: Nome da tabela
+            database: Nome do banco de dados (opcional, usa o banco atual por padrão)
             
         Returns:
-            表结构描述的JSON字符串
+            Descrição da estrutura da tabela em formato JSON
         """
-        # 参数验证
+        # Validação de parâmetros
         MetadataToolBase.validate_parameter(
             "table", table,
             lambda x: re.match(r'^[a-zA-Z0-9_]+$', x),
-            "表名只能包含字母、数字和下划线"
+            "Nome da tabela só pode conter letras, números e sublinhados"
         )
         
         if database:
             MetadataToolBase.validate_parameter(
                 "database", database, 
                 lambda x: re.match(r'^[a-zA-Z0-9_]+$', x),
-                "数据库名称只能包含字母、数字和下划线"
+                "Nome do banco só pode conter letras, números e sublinhados"
             )
             
-        # DESCRIBE 语句与 SHOW COLUMNS 功能类似，但结果格式可能略有不同
+        # A instrução DESCRIBE tem funcionalidade similar ao SHOW COLUMNS, mas com formato de resultado diferente
         query = f"DESCRIBE `{table}`" if not database else f"DESCRIBE `{database}`.`{table}`"
-        logger.debug(f"执行查询: {query}")
+        logger.debug(f"Executando consulta: {query}")
         
-        return await MetadataToolBase.execute_metadata_query(query, operation_type="表结构描述")
+        return await MetadataToolBase.execute_metadata_query(query, operation_type="Descrição da estrutura da tabela")
 
     @mcp.tool()
     @MetadataToolBase.handle_query_error
     async def mysql_show_create_table(table: str, database: Optional[str] = None) -> str:
         """
-        获取表的创建语句
+        Obtém o comando CREATE TABLE para uma tabela
         
         Args:
-            table: 表名
-            database: 数据库名称 (可选，默认使用当前连接的数据库)
+            table: Nome da tabela
+            database: Nome do banco de dados (opcional, usa o banco atual por padrão)
             
         Returns:
-            表创建语句的JSON字符串
+            Comando CREATE TABLE em formato JSON
         """
-        # 参数验证
+        # Validação de parâmetros
         MetadataToolBase.validate_parameter(
             "table", table,
             lambda x: re.match(r'^[a-zA-Z0-9_]+$', x),
-            "表名只能包含字母、数字和下划线"
+            "Nome da tabela só pode conter letras, números e sublinhados"
         )
         
         if database:
             MetadataToolBase.validate_parameter(
                 "database", database, 
                 lambda x: re.match(r'^[a-zA-Z0-9_]+$', x),
-                "数据库名称只能包含字母、数字和下划线"
+                "Nome do banco só pode conter letras, números e sublinhados"
             )
             
         table_ref = f"`{table}`" if not database else f"`{database}`.`{table}`"
         query = f"SHOW CREATE TABLE {table_ref}"
-        logger.debug(f"执行查询: {query}")
+        logger.debug(f"Executando consulta: {query}")
         
-        return await MetadataToolBase.execute_metadata_query(query, operation_type="表创建语句查询")
+        return await MetadataToolBase.execute_metadata_query(query, operation_type="Consulta de comando CREATE TABLE")

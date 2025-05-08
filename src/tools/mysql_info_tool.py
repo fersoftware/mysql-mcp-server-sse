@@ -1,6 +1,6 @@
 """
-MySQL数据库信息查询工具
-提供数据库、变量和状态等系统信息查询功能
+Ferramenta de Consulta de Informações do MySQL
+Fornece funcionalidades de consulta de informações do sistema, como banco de dados, variáveis e status
 """
 
 import json
@@ -16,39 +16,39 @@ from src.db.mysql_operations import get_db_connection, execute_query
 
 logger = logging.getLogger("mysql_server")
 
-# 自定义异常类
+# Classe de exceção personalizada
 class SecurityError(QueryExecutionError):
-    """安全限制错误"""
+    """Erro de restrição de segurança"""
     pass
 
-# 从环境变量读取敏感字段列表
+# Obtém lista de padrões de campos sensíveis das variáveis de ambiente
 def get_sensitive_patterns():
-    """从环境变量获取敏感字段模式列表"""
-    default_patterns = [
+    """Obtém lista de padrões de campos sensíveis das variáveis de ambiente"""
+    padrões_padrão = [
         r'password', r'auth', r'credential', r'key', r'secret', r'private', 
         r'host', r'path', r'directory', r'ssl', r'iptables', r'filter'
     ]
     
-    env_patterns = os.getenv('SENSITIVE_INFO_FIELDS', '')
-    if env_patterns:
-        # 合并自定义模式和默认模式
-        patterns = [pattern.strip() for pattern in env_patterns.split(',') if pattern.strip()]
-        return list(set(patterns + default_patterns))
+    padrões_ambiente = os.getenv('SENSITIVE_INFO_FIELDS', '')
+    if padrões_ambiente:
+        # Combina padrões personalizados com padrões padrão
+        padrões = [padrão.strip() for padrão in padrões_ambiente.split(',') if padrão.strip()]
+        return list(set(padrões + padrões_padrão))
     
-    return default_patterns
+    return padrões_padrão
 
-# 敏感变量和状态关键字列表
-SENSITIVE_VARIABLE_PATTERNS = get_sensitive_patterns()
+# Lista de padrões de variáveis e status sensíveis
+PATTERN_VARIAVEIS_SENSIVEIS = get_sensitive_patterns()
 
-# 敏感变量名前缀，生产环境中这些变量的值会被隐藏
-SENSITIVE_VARIABLE_PREFIXES = [
+# Prefixos de variáveis sensíveis, cujos valores serão ocultados no ambiente de produção
+PREFIXOS_VARIAVEIS_SENSIVEIS = [
     "password", "auth", "secret", "key", "certificate", "ssl", "tls", "cipher", 
     "authentication", "secure", "credential", "token"
 ]
 
 def check_environment_permission(env_type: EnvironmentType, query_type: str) -> bool:
     """
-    检查当前环境是否允许执行特定类型的查询
+    Verifica se o ambiente atual permite a execução de um tipo específico de consulta
     
     Args:
         env_type: 环境类型（开发/生产）

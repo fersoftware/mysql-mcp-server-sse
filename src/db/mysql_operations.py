@@ -11,13 +11,18 @@ from ..security.interceptor import SQLInterceptor, SecurityException
 
 logger = logging.getLogger("mysql_server")
 
-# 初始化安全组件
+# Inicializa componentes de segurança
 sql_analyzer = SQLOperationType()
 query_limiter = QueryLimiter()
 sql_interceptor = SQLInterceptor(sql_analyzer)
 
 def get_db_config():
-    """动态获取数据库配置"""
+    """
+    Obtém configuração do banco de dados das variáveis de ambiente
+    
+    Returns:
+        dict: Dicionário com a configuração do banco de dados
+    """
     return {
         'host': os.getenv('MYSQL_HOST', 'localhost'),
         'user': os.getenv('MYSQL_USER', 'root'),
@@ -25,60 +30,60 @@ def get_db_config():
         'database': os.getenv('MYSQL_DATABASE', ''),
         'port': int(os.getenv('MYSQL_PORT', '3306')),
         'connection_timeout': 5,
-        'auth_plugin': 'mysql_native_password'  # 指定认证插件
+        'auth_plugin': 'mysql_native_password'  # Especifica o plugin de autenticação
     }
 
 @contextmanager
 def get_db_connection():
     """
-    创建数据库连接的上下文管理器
+    Cria um gerenciador de contexto para conexão com o banco de dados
     
     Yields:
-        mysql.connector.connection.MySQLConnection: 数据库连接对象
+        mysql.connector.connection.MySQLConnection: Objeto de conexão com o banco de dados
     """
     connection = None
     try:
         db_config = get_db_config()
         if not db_config['database']:
-            raise ValueError("数据库名称未设置，请检查环境变量MYSQL_DATABASE")
+            raise ValueError("Nome do banco de dados não definido, verifique a variável de ambiente MYSQL_DATABASE")
         
         connection = mysql.connector.connect(**db_config)
         yield connection
     except mysql.connector.Error as err:
         error_msg = str(err)
-        logger.error(f"数据库连接失败: {error_msg}")
+        logger.error(f"Falha na conexão com o banco de dados: {error_msg}")
         
         if "Access denied" in error_msg:
-            raise ValueError("访问被拒绝，请检查用户名和密码")
+            raise ValueError("Acesso negado, verifique o nome de usuário e senha")
         elif "Unknown database" in error_msg:
             db_config = get_db_config()
-            raise ValueError(f"数据库'{db_config['database']}'不存在")
+            raise ValueError(f"Banco de dados '{db_config['database']}' não existe")
         elif "Can't connect" in error_msg or "Connection refused" in error_msg:
-            raise ConnectionError("无法连接到MySQL服务器，请检查服务是否启动")
+            raise ConnectionError("Não foi possível conectar ao servidor MySQL, verifique se o serviço está em execução")
         elif "Authentication plugin" in error_msg:
-            raise ValueError(f"认证插件问题: {error_msg}，请尝试修改用户认证方式为mysql_native_password")
+            raise ValueError(f"Problema com o plugin de autenticação: {error_msg}, tente alterar o método de autenticação para mysql_native_password")
         else:
-            raise ConnectionError(f"数据库连接失败: {error_msg}")
+            raise ConnectionError(f"Falha na conexão com o banco de dados: {error_msg}")
     finally:
         if connection and connection.is_connected():
             connection.close()
-            logger.debug("数据库连接已关闭")
+            logger.debug("Conexão com o banco de dados fechada")
 
 async def execute_query(connection, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """
-    在给定的数据库连接上执行查询
+    Executa uma consulta SQL
     
     Args:
-        connection: 数据库连接
-        query: SQL查询语句
-        params: 查询参数 (可选)
+        connection: Objeto de conexão com o banco de dados
+        query: Instrução SQL da consulta
+        params: Dicionário de parâmetros da consulta (opcional)
         
     Returns:
-        查询结果列表，如果是修改操作则返回影响的行数
-        
+        lista: Lista de resultados da consulta
+    
     Raises:
-        SecurityException: 当操作被安全机制拒绝时
-        ValueError: 当查询执行失败时
+        SecurityException: Quando a operação é negada pelo mecanismo de segurança
+        ValueError: Quando a execução da consulta falha
     """
     cursor = None
     operation = None  # 初始化操作类型变量
