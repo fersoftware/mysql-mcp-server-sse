@@ -58,32 +58,22 @@ class SQLInterceptor:
                 raise SecurityException(f"Operação SQL não suportada: {operation}")
             
             # Analisa o risco da SQL
-            risk_analysis = self.analyzer.analyze_risk(sql_query)
-            
-            # Verifica se é uma operação perigosa
-            if risk_analysis['is_dangerous']:
-                raise SecurityException(
-                    f"Operação perigosa detectada: {risk_analysis['operation']}"
-                )
+            risk_level = self.analyzer.analyze_risk(sql_query)
             
             # Verifica se a operação é permitida
-            if not risk_analysis['is_allowed']:
+            if risk_level > SQLRiskLevel.MÉDIO:
                 raise SecurityException(
-                    f"Nível de risco da operação atual ({risk_analysis['risk_level'].name}) não é permitido,"
-                    f"níveis de risco permitidos: {[level.name for level in self.analyzer.allowed_risk_levels]}"
+                    f"Nível de risco da operação atual ({risk_level.name}) não é permitido"
                 )
             
             # Determina o tipo de operação (DDL, DML ou Metadados)
-            operation_category = "Operação de metadados" if operation in self.analyzer.metadata_operations else (
-                "Operação DDL" if operation in self.analyzer.ddl_operations else "Operação DML"
-            )
+            operation_category = "Operação de metadados" if operation in self.analyzer.ddl_operations else "Operação DML"
             
             # Registra log detalhado
             logger.info(
                 f"SQL{operation_category} verificado com sucesso - "
-                f"Operação: {risk_analysis['operation']}, "
-                f"Nível de risco: {risk_analysis['risk_level'].name}, "
-                f"Tabelas afetadas: {', '.join(risk_analysis['affected_tables'])}"
+                f"Operação: {operation}, "
+                f"Nível de risco: {risk_level.name}"
             )
 
             return True

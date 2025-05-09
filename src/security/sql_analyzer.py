@@ -49,6 +49,38 @@ class SQLOperationType:
             'CREATE', 'ALTER', 'DROP', 'TRUNCATE', 'RENAME'  # Operações estruturais
         }
         
+        # Define as operações de metadados
+        self.metadata_operations = {
+            'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN', 'ANALYZE', 'INFORMATION_SCHEMA', 'USE'
+        }
+
+    def analyze_risk(self, query: str) -> SQLRiskLevel:
+        """
+        Analisa o nível de risco da consulta SQL
+        
+        Args:
+            query: Consulta SQL a ser analisada
+            
+        Returns:
+            SQLRiskLevel: Nível de risco da consulta
+        """
+        query = query.strip().upper()
+        
+        # Verifica se é uma operação DDL
+        if any(op in query for op in self.ddl_operations):
+            return SQLRiskLevel.ALTO if self.env_type == TipoAmbiente.DESENVOLVIMENTO else SQLRiskLevel.CRÍTICO
+            
+        # Verifica se é uma operação DELETE ou UPDATE sem WHERE
+        if ('DELETE' in query or 'UPDATE' in query) and 'WHERE' not in query:
+            return SQLRiskLevel.CRÍTICO
+            
+        # Verifica se é uma operação INSERT
+        if 'INSERT' in query:
+            return SQLRiskLevel.MÉDIO
+            
+        # Por padrão, considera SELECT ou operações seguras
+        return SQLRiskLevel.BAIXO
+        
         # Define as operações DML (Linguagem de Manipulação de Dados)
         self.dml_operations = {
             'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'MERGE'  # Operações de dados
